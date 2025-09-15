@@ -2,6 +2,7 @@
 
 A monorepo containing a React frontend and Python FastAPI backend for an AI-powered repair and DIY assistance application.
 
+![img.png](img.png)
 ### Getting Started
 
 ```bash
