@@ -135,7 +135,7 @@ async def generate_qa_pairs(request: GenerateRequest):
     """
 
     user_prompt = f"""
-    Generate 20 random repair Q&A samples.
+    Generate 5 random repair Q&A samples.
     Each must use a different persona from the system-defined list.
     """
 

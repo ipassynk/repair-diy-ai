@@ -38,6 +38,7 @@ function App() {
   const [validationResult, setValidationResult] =
     useState<ValidationResponse | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [isLabeling, setLabeling] = useState(false);
   const completionRef = useRef<HTMLPreElement>(null);
 
   const handleValidate = async () => {
@@ -108,6 +109,10 @@ function App() {
     complete("");
   };
 
+  const handleLabel = () => {
+    // TODO
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full px-4 py-8">
@@ -115,8 +120,8 @@ function App() {
         <div className="text-center text-muted-foreground mb-8">
           <p>
             Mini Project 1: Synthetic Data on Home DIY / Repair QA for AI
-            Engineer Bootcamp. Use Vercel AI Toolkit, Shadcn/ui, FastAPI, Pandas,
-            OpenAI, LLM as Judge techniques.
+            Engineer Bootcamp. Use Vercel AI Toolkit, Shadcn/ui, FastAPI,
+            Pandas, OpenAI, LLM as Judge techniques.
           </p>
         </div>
 
@@ -166,7 +171,10 @@ function App() {
 
         {showRawJson && (
           <div className="w-full mb-6">
-            <pre ref={completionRef} className="whitespace-pre-wrap text-sm leading-relaxed overflow-auto max-h-96 bg-white p-4 rounded border">
+            <pre
+              ref={completionRef}
+              className="whitespace-pre-wrap text-sm leading-relaxed overflow-auto max-h-96 bg-white p-4 rounded border"
+            >
               {completion ||
                 "No content yet. Click Generate QA Pairs to start."}
             </pre>
@@ -233,20 +241,22 @@ function App() {
           <div className="w-full mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Generated Repair Q&A</h3>
-              <Button
-                onClick={handleValidate}
-                disabled={isValidating}
-                variant={validationResult?.valid ? "default" : "destructive"}
-              >
-                {isValidating ? "Validating..." : "Validate"}
-              </Button>
-              <Button
-                onClick={handleLabel}
-                disabled={isLabeling}
-                variant={validationResult?.valid ? "default" : "secondary"}
-              >
-                {isValidating ? "Labeling..." : "Label"}
-              </Button>
+              <div className={"flex gap-2"}>
+                <Button
+                  onClick={handleValidate}
+                  disabled={isValidating}
+                  variant={"secondary"}
+                >
+                  {isValidating ? "Validating..." : "Validate"}
+                </Button>
+                <Button
+                  onClick={handleLabel}
+                  disabled={isLabeling}
+                  variant={"secondary"}
+                >
+                  {isValidating ? "Labeling..." : "Label"}
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
