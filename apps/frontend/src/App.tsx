@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCompletion } from "@ai-sdk/react";
 
 interface RepairQA {
@@ -19,10 +19,50 @@ interface RepairQA {
   tips: string;
 }
 
+interface ValidationErrorDetail {
+  index: number;
+  field: string;
+  error: string;
+}
+
+interface ValidationResponse {
+  valid: boolean;
+  errors: ValidationErrorDetail[];
+  message: string;
+}
+
 function App() {
   const [category, setCategory] = useState("random");
   const [parsedData, setParsedData] = useState<RepairQA[]>([]);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [validationResult, setValidationResult] =
+    useState<ValidationResponse | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const completionRef = useRef<HTMLPreElement>(null);
+
+  const handleValidate = async () => {
+    setIsValidating(true);
+    try {
+      const response = await fetch("http://localhost:8000/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: parsedData }),
+      });
+      const data: ValidationResponse = await response.json();
+      setValidationResult(data);
+    } catch (error) {
+      console.error("Validation error:", error);
+      setValidationResult({
+        valid: false,
+        errors: [],
+        message: "Failed to validate data",
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   const { completion, complete, isLoading, error } = useCompletion({
     api: "/api/generate",
@@ -49,6 +89,18 @@ function App() {
     },
   });
 
+  // TODO - does not work
+  useEffect(() => {
+    if (completion && completionRef.current && showRawJson) {
+      setTimeout(() => {
+        completionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [completion, showRawJson]);
+
   const handleGenerate = () => {
     console.log("Starting generation for category:", category);
     setParsedData([]);
@@ -58,16 +110,17 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-8">Repair DIY AI</h1>
         <div className="text-center text-muted-foreground mb-8">
           <p>
             Mini Project 1: Synthetic Data on Home DIY / Repair QA for AI
-            Engineer Bootcamp. Use The AI Toolkit for TypeScript, FastAPI, OpenAI, LLM as Judge.
+            Engineer Bootcamp. Use Vercel AI Toolkit, Shadcn/ui, FastAPI, Pandas,
+            OpenAI, LLM as Judge techniques.
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto mb-8">
+        <div className="w-full mb-8">
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">
@@ -94,7 +147,7 @@ function App() {
         </div>
 
         {/* Debug info */}
-        <div className="max-w-4xl mx-auto mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded flex justify-between items-center">
+        <div className="w-full mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded flex justify-between items-center">
           <div>
             <p>Completion length: {completion?.length || 0}</p>
             <p>Is loading: {isLoading ? "Yes" : "No"}</p>
@@ -112,16 +165,64 @@ function App() {
         </div>
 
         {showRawJson && (
-          <div className="max-w-4xl mx-auto mb-6">
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed overflow-auto max-h-96 bg-white p-4 rounded border">
+          <div className="w-full mb-6">
+            <pre ref={completionRef} className="whitespace-pre-wrap text-sm leading-relaxed overflow-auto max-h-96 bg-white p-4 rounded border">
               {completion ||
                 "No content yet. Click Generate QA Pairs to start."}
             </pre>
           </div>
         )}
 
+        {/* Validation Results */}
+        {validationResult && (
+          <div className="w-full mb-6">
+            {validationResult.valid ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <span className="text-green-600 text-xl mr-2">✅</span>
+                  <div>
+                    <h4 className="font-semibold text-green-800">
+                      Validation Successful
+                    </h4>
+                    <p className="text-green-700">{validationResult.message}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <span className="text-red-600 text-xl mr-2">❌</span>
+                  <div>
+                    <h4 className="font-semibold text-red-800">
+                      Validation Failed
+                    </h4>
+                    <p className="text-red-700">{validationResult.message}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {validationResult.errors?.map((error, index) => (
+                    <div
+                      key={index}
+                      className="bg-white border border-red-200 rounded p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-red-800 text-sm">
+                          Item {error.index + 1}:
+                        </span>
+                        <span className="text-red-700 text-sm">
+                          {error.field} - {error.error}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {error && (
-          <div className="max-w-4xl mx-auto mt-4">
+          <div className="w-full mt-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800">Error: {error.message}</p>
             </div>
@@ -129,12 +230,26 @@ function App() {
         )}
 
         {parsedData.length > 0 && (
-          <div className="max-w-6xl mx-auto mb-6">
+          <div className="w-full mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Generated Repair Q&A</h3>
+              <Button
+                onClick={handleValidate}
+                disabled={isValidating}
+                variant={validationResult?.valid ? "default" : "destructive"}
+              >
+                {isValidating ? "Validating..." : "Validate"}
+              </Button>
+              <Button
+                onClick={handleLabel}
+                disabled={isLabeling}
+                variant={validationResult?.valid ? "default" : "secondary"}
+              >
+                {isValidating ? "Labeling..." : "Label"}
+              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {parsedData.map((item, index) => (
                 <div
                   key={index}
